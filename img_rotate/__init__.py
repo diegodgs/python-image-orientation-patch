@@ -1,10 +1,10 @@
 from PIL import Image, ImageFile
-
+import numpy as np
 __all__ = ['fix_orientation']
 
 # PIL's Error "Suspension not allowed here" work around:
 # s. http://mail.python.org/pipermail/image-sig/1999-August/000816.html
-ImageFile.MAXBLOCK = 1024*1024
+# ImageFile.MAXBLOCK = 1024*1024
 
 # The EXIF tag that holds orientation data.
 EXIF_ORIENTATION_TAG = 274
@@ -14,15 +14,15 @@ EXIF_ORIENTATION_TAG = 274
 ORIENTATIONS = {
     1: ("Normal", 0),
     2: ("Mirrored left-to-right", 0),
-    3: ("Rotated 180 degrees", Image.ROTATE_180),
+    3: ("Rotated 180 degrees", 180),
     4: ("Mirrored top-to-bottom", 0),
     5: ("Mirrored along top-left diagonal", 0),
-    6: ("Rotated 90 degrees", Image.ROTATE_270),
+    6: ("Rotated 90 degrees", -90),
     7: ("Mirrored along top-right diagonal", 0),
-    8: ("Rotated 270 degrees", Image.ROTATE_90)
+    8: ("Rotated 270 degrees", -270)
 }
 
-def fix_orientation(img, save_over=False):
+def fix_orientation(img, save_over=True):
     """
     `img` can be an Image instance or a path to an image file.
     `save_over` indicates if the original image file should be replaced by the new image.
@@ -40,7 +40,7 @@ def fix_orientation(img, save_over=False):
         raise ValueError("Image file has no EXIF data.")
     if orientation in [3,6,8]:
         degrees = ORIENTATIONS[orientation][1]
-        img = img.transpose(degrees)
+        img = Image.fromarray(np.rot90(np.asarray(img), k=degrees % 90))
         if save_over and path is not None:
             try:
                 img.save(path, quality=95, optimize=1)
